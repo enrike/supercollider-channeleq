@@ -55,11 +55,12 @@ ChannelEQ {
 
     init { |argFrdb|
         frdb = argFrdb ? [[100,0,1], [250,0,1], [1000,0,1], [3500,0,1], [6000,0,1]];
-            
-        synthdef = SynthDef("param_beq", { |out = 0, gate = 1, fadeTime = 0.05, doneAction = 2|
+
+		// enrike added in argument
+        synthdef = SynthDef("param_beq", { |in = 0, out = 0, gate = 1, fadeTime = 0.05, doneAction = 2|
             var frdb, input, env;
             env = EnvGen.kr(Env.asr(fadeTime, 1, fadeTime), gate, doneAction: doneAction);
-            input = In.ar(out, numChannels);
+            input = In.ar(in, numChannels);
             input = this.ar(input);
             XOut.ar(out, env, input);
         }).store;
@@ -661,7 +662,33 @@ ChannelEQGUI {
                 .states_([["revert", Color.black, Color.green(0.75).alpha_(0.25)]])
                 .resize_(7)
         ];
-        
+
+		// enrike
+		fs_toogle = RoundButton.new( window, 16@16 )
+		.extrude_( true ).border_(1).font_( font )
+		.states_( [[ "F", Color.black, Color.red(0.75).alpha_(0.25) ],
+			[ "F", Color.black, Color.red(0.25).alpha_(0.25) ]
+		] )
+		.action_({ |bt| fsc .active_(bt.value.asBoolean) })
+		.resize_(7);
+
+		inoutMenus = [0,0];
+
+        StaticText(window, 20@18).font_(font).align_(\right).string_("In").resize_(7);
+		inoutMenus[0] = PopUpMenu(window, Rect(10, 10, 35, 17))
+		.items_( Array.fill(16, { arg i; i }) )
+		.action_{|m| channelEQ.synth.set(\in, m.value) }
+		.resize_(7);
+
+		StaticText(window, 20@18).font_(font).align_(\right).string_("Out").resize_(7);
+		inoutMenus[1] = PopUpMenu(window, Rect(10, 10, 35, 17))
+		.items_( Array.fill(16, { arg i; i }) )
+		.action_{|m| channelEQ.synth.set(\out, m.value) }
+		.resize_(7);
+
+		// end enrike
+
+
         puFileButtons[0].action_ { this.save; };
         puFileButtons[1].action_ { this.revert; };
 
