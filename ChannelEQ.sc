@@ -141,6 +141,7 @@ ChannelEQGUI {
     var selected;
     var tvw, tvwViews;
     var puMenu, puButtons, puFileButtons;
+	var fsc, fs_toogle, inoutMenus; // enrike
     var <>stopOnClose = false;
 
     *initClass {
@@ -519,8 +520,32 @@ ChannelEQGUI {
                 "ChannelEQ on '%' (% channels)".format(channelEQ.target.name, channelEQ.numChannels)
             },
             Rect(299, 130, 505, 320), true
-        ).front; 
-                
+        ).front;
+
+		// enrike
+		window.alwaysOnTop = true; // this should be optional
+
+		fsc = FreqScopeView(window, Rect(10, 10, window.bounds.width-20, window.bounds.height-80));
+		fsc.waveColors = [Color.red];
+		fsc.background = Color.grey(0.9);
+		fsc.resize_(5);
+		fsc.active_(true); // turn it on the first time;
+		fsc.inBus_(0);
+		fsc.freqMode_(1);
+		//
+		/*eq[ \fsc1 ] = FreqScopeView(window, Rect(10, 10, 285, 140));
+		eq[ \fsc1 ].waveColors = [Color.green];
+		eq[ \fsc1 ].background = Color.white;
+		eq[ \fsc1 ].resize_(5);
+		eq[ \fsc1 ].active_(true); // turn it on the first time;
+		eq[ \fsc1 ].inBus_(0);
+		eq[ \fsc1 ].freqMode_(1);*/
+		window.onClose_({
+			fsc.kill;
+			//eq[ \fsc1 ].kill
+		}); // MUST HAVE THIS
+		// end enrike
+
         window.view.decorator = FlowLayout(window.view.bounds, 10@10, 4@0);
         
         uvw = UserView(window, 
