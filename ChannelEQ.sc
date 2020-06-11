@@ -37,7 +37,7 @@ ChannelEQ {
         } {
             if (argBus.isNil) {
                 // If no bus is provided, default to zero
-                bus = 0;
+                bus = 0.asBus;
                 // Server
                 server = argServer ? Server.default;
                 // Number of channels set to 2
@@ -56,7 +56,7 @@ ChannelEQ {
     init { |argFrdb|
         frdb = argFrdb ? [[100,0,1], [250,0,1], [1000,0,1], [3500,0,1], [6000,0,1]];
 
-        synthdef = SynthDef("param_beq", { |in = 2, out = 0, gate = 1, fadeTime = 0.05, doneAction = 2|
+        synthdef = SynthDef("param_beq", { |in = 0, out = 0, gate = 1, fadeTime = 0.05, doneAction = 2|
             var frdb, input, env;
             env = EnvGen.kr(Env.asr(fadeTime, 1, fadeTime), gate, doneAction: doneAction);
             input = In.ar(in, numChannels);
@@ -73,6 +73,8 @@ ChannelEQ {
         gui = nil;
     }
 
+	close {gui.window.close}
+
     play {
         server.waitForBoot {
             if (target.notNil) {
@@ -80,7 +82,7 @@ ChannelEQ {
                 synth = target.playfx(\param_beq, [\eq_controls, this.toControl]);
             } {
                 // using raw Bus
-                synth = Synth.tail(server, \param_beq, [\out, bus, \eq_controls, this.toControl]);
+                synth = Synth.tail(server, \param_beq, [\in, bus, \out, bus, \eq_controls, this.toControl]);
             };
             NodeWatcher.register(synth);
         };
@@ -150,7 +152,7 @@ ChannelEQGUI {
     var channelEQ;
     var <window;
 
-    var uvw, font;
+    var <uvw, font;
     var frpresets;
     var bypassButton;
     var selected;
@@ -311,6 +313,8 @@ ChannelEQGUI {
         var bounds;
         var pt;
         var min = 20, max = 22050, range = 24;
+
+		[vw, x,y,mod].postln;
 
         bounds = vw.bounds.moveTo(0, 0);
         //pt = (x@y) - (bounds.leftTop);
@@ -530,21 +534,23 @@ ChannelEQGUI {
 
         window = Window.new(
             if (channelEQ.target.isNil) {
-                "ChannelEQ on bus % (% channels)".format(channelEQ.bus, channelEQ.numChannels)
+                "ChannelEQ on bus % (% channels)".format(channelEQ.bus.index, channelEQ.numChannels)
             } {
                 "ChannelEQ on '%' (% channels)".format(channelEQ.target.name, channelEQ.numChannels)
             },
             Rect(750, 200, 505, 320), true
-        ).front;
+        );
 
 		window.alwaysOnTop = true; // this should be optional
+
+		window.front;
 
 		fsc = FreqScopeView(window, Rect(10, 10, window.bounds.width-20, window.bounds.height-80));
 		fsc.waveColors = [Color.red];
 		fsc.background = Color.grey(0.9);
 		fsc.resize_(5);
 		fsc.active_(true); // turn it on the first time;
-		fsc.inBus_(0);
+		fsc.inBus_(channelEQ.bus.index);
 		fsc.freqMode_(1);
 		//
 		/*eq[ \fsc1 ] = FreqScopeView(window, Rect(10, 10, 285, 140));
@@ -693,7 +699,7 @@ ChannelEQGUI {
 			channelEQ.synth.set(\in, m.value);
 			fsc.inBus_(m.value);
 		}
-		.value_(2) // default to sound in in a stereo card
+		.value_(channelEQ.bus.index)
 		.resize_(7);
 
 		StaticText(window, 20@18).font_(font).align_(\right).string_("Out").resize_(7);
@@ -703,6 +709,7 @@ ChannelEQGUI {
 			channelEQ.synth.set(\out, m.value);
 			fsc.inBus_(m.value);
 		}
+		.value_(channelEQ.bus.index)
 		.resize_(7);
 
 
